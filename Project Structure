@@ -1,0 +1,14 @@
+web_vault/
+├─ app.py   #main Flask application
+├─ templates/  #HTML pages
+│   ├─ index.html
+│   └─ login.html
+├─ static/  #CSS/JS assets
+│   ├─ bulma.min.css
+│   └─ vault.js
+├─ crypto_core.py  #AES + RSA functions
+├─ file_handler.py  #File I/O routines
+├─ vault/  #encrypted vault and keys
+│   ├─ private_key.enc
+│   ├─ public_key.pem
+│   └─ wrapped_aes.key
