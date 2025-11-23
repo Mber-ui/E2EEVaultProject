@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>E2EE Vault</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico/css/pico.min.css">
+
+    <style>
+        body { margin: 2rem; }
+        .vault-box {
+            padding: 1.5rem;
+            background: #f3f3f3;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><strong>E2EE Vault</strong></li>
+        </ul>
+        <ul>
+            {% if session.get("email") %}
+                <li>{{ session.email }}</li>
+                <li><a href="/logout" role="button" class="secondary">Logout</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
