@@ -1,0 +1,35 @@
+Instructions for Use
+
+Step 1: Open a terminal (PowerShell or CMD)
+pip install -r requirements.txt
+
+Step 2: Add your Google OAuth credentials
+
+Go to:
+https://console.cloud.google.com/apis/credentials
+
+Create:
+- OAuth client ID
+- Authorized redirect URI: http://localhost:5000/callback
+
+Step 3: Download the JSON as: client_secret.json
+Place it in the project folder.
+
+Step 4: Start the web app: python app.py
+
+Step 5: Open the vault in your browser: http://localhost:5000/
+
+⭐ HOW TO USE
+🔐 Encrypt a File
+- Login with Google
+- Upload any file
+- The app encrypts it using:
+  -AES-256-GCM
+  -RSA-4096 key wrapping
+
+Only your account can decrypt it.
+
+🔓 Decrypt a File
+Upload the .enc file and its .json metadata
+App will unwrap the AES key
+File is decrypted and downloaded
