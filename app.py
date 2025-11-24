@@ -3,15 +3,16 @@ from flask import Flask, render_template, request, redirect, session, send_file
 from flask_session import Session
 
 from crypto_core import (
-    generate_rsa_key_pair, 
-    save_rsa_keys, 
-    load_private_key, 
+    generate_rsa_key_pair,
+    load_private_key,
     load_public_key,
-    rsa_wrap_key, 
-    rsa_unwrap_key, 
-    aes_encrypt, 
-    aes_decrypt
+    rsa_wrap_aes_key,
+    rsa_unwrap_aes_key,
+    aes_encrypt,
+    aes_decrypt,
+    generate_aes_key
 )
+
 from file_handler import write_bytes, read_bytes, write_json, read_json
 
 from google_auth_oauthlib.flow import Flow
@@ -21,7 +22,7 @@ import google.auth.transport.requests
 # ---------------------------- CONFIG ---------------------------- #
 
 app = Flask(__name__)
-app.secret_key = "super-secret-key"   # CHANGE THIS BEFORE FINAL SUBMISSION
+app.secret_key = "super-secret-key"
 
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
@@ -49,17 +50,19 @@ def ensure_user_vault():
     if not os.path.exists(user_dir):
         os.makedirs(user_dir)
 
-        private, public = generate_rsa_keypair()
-        save_rsa_keys(user_dir, private, public)
+        private_pem, public_pem = generate_rsa_key_pair()
 
-    return os.path.join(VAULT_ROOT, email)
+        # save keys
+        write_bytes(os.path.join(user_dir, "private_key.pem"), private_pem)
+        write_bytes(os.path.join(user_dir, "public_key.pem"), public_pem)
+
+    return user_dir
 
 # ---------------------------- ROUTES ---------------------------- #
 
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 # ---------------- GOOGLE LOGIN ---------------- #
 
@@ -90,7 +93,6 @@ def logout():
     session.clear()
     return redirect("/")
 
-
 # ---------------- ENCRYPT ---------------- #
 
 @app.route("/encrypt", methods=["POST"])
@@ -103,10 +105,13 @@ def encrypt_file():
 
     user_dir = ensure_user_vault()
 
-    aes_key, nonce, ciphertext = aes_encrypt(data)
+    # AES key must be generated separately
+    aes_key = generate_aes_key()
+    nonce, ciphertext = aes_encrypt(aes_key, data)
 
-    public_key = load_public_key(os.path.join(user_dir, "public_key.pem"))
-    wrapped_key = rsa_wrap_key(public_key, aes_key)
+    # Load RSA public key
+    public_pem = read_bytes(os.path.join(user_dir, "public_key.pem"))
+    wrapped_key = rsa_wrap_aes_key(public_pem, aes_key)
 
     meta = {
         "filename": file.filename,
@@ -121,7 +126,6 @@ def encrypt_file():
     write_json(metadata_path, meta)
 
     return "File encrypted successfully!"
-
 
 # ---------------- DECRYPT ---------------- #
 
@@ -139,8 +143,8 @@ def decrypt_file():
     nonce = bytes.fromhex(metadata["nonce"])
     wrapped_key = bytes.fromhex(metadata["wrapped_key"])
 
-    private_key = load_private_key(os.path.join(user_dir, "private_key.pem"))
-    aes_key = rsa_unwrap_key(private_key, wrapped_key)
+    private_pem = read_bytes(os.path.join(user_dir, "private_key.pem"))
+    aes_key = rsa_unwrap_aes_key(private_pem, wrapped_key)
 
     plaintext = aes_decrypt(aes_key, nonce, ciphertext)
 
@@ -149,11 +153,8 @@ def decrypt_file():
 
     return send_file(output_path, as_attachment=True)
 
-
 # ---------------------------- RUN ---------------------------- #
 
 if __name__ == "__main__":
     app.run(debug=True)
 
-if __name__ == '__main__':
-    app.run(debug=True)
