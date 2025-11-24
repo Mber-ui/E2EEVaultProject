@@ -90,3 +90,23 @@ def rsa_unwrap_aes_key(private_pem: bytes, wrapped_key: bytes):
         )
     )
     return decrypted
+
+
+# -------------------------------------------------------
+# SAVE RSA KEYS TO VAULT (MISSING FUNCTION ADDED)
+# -------------------------------------------------------
+
+def save_rsa_keys(vault_dir: str, private_pem: bytes, public_pem: bytes):
+    """
+    Save RSA private_key.pem and public_key.pem into the vault directory.
+    """
+    priv_path = os.path.join(vault_dir, "private_key.pem")
+    pub_path = os.path.join(vault_dir, "public_key.pem")
+
+    with open(priv_path, "wb") as f:
+        f.write(private_pem)
+
+    with open(pub_path, "wb") as f:
+        f.write(public_pem)
+
+    return priv_path, pub_path
