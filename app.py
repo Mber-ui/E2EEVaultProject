@@ -34,7 +34,7 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 flow = Flow.from_client_secrets_file(
     "client_secret.json",
-    scopes=["profile", "email"],
+    scopes=["https://www.googleapis.com/auth/userinfo.profile", "openid", "https://www.googleapis.com/auth/userinfo.email"],
     redirect_uri="http://localhost:5000/callback"
 )
 
