@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, session, send_file
 from flask_session import Session
 
 from crypto_core import (
-    generate_rsa_keypair, 
+    generate_rsa_key_pair, 
     save_rsa_keys, 
     load_private_key, 
     load_public_key,
