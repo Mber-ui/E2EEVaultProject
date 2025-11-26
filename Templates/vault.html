@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Vault</title>
+</head>
+<body>
+    <h1>Your Encrypted Files</h1>
+
+    <a href="/">Home</a> |
+    <a href="/logout">Logout</a>
+
+    <hr>
+
+    {% if files %}
+        <ul>
+        {% for f in files %}
+            <li>
+                {{ f }}
+                <form action="/decrypt" method="POST" enctype="multipart/form-data" style="display:inline;">
+                    <input type="hidden" name="file" value="{{ f }}">
+                    <button type="submit">Decrypt</button>
+                </form>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No encrypted files yet.</p>
+    {% endif %}
+
+</body>
+</html>
