@@ -1,35 +1,28 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<h2>🔐 End-to-End Encrypted Vault</h2>
+<h2>Welcome to Your Secure Vault</h2>
 
 {% if not session.get("email") %}
-<article class="vault-box">
-    <h3>Login Required</h3>
-    <p>You must sign in with Google to use the encrypted vault.</p>
-    <a href="/login" role="button">Sign in with Google</a>
+
+<article class="vault-card">
+    <h3>Sign In to Access Your Files</h3>
+    <p>
+        Your vault uses enterprise-grade end-to-end encryption (AES-256-GCM + RSA-2048).  
+        Only <strong>you</strong> can encrypt and decrypt your data.
+    </p>
+
+    <a href="/login" role="button" class="primary">Sign in with Google</a>
 </article>
 
 {% else %}
 
-<article class="vault-box">
-    <h3>Encrypt a File</h3>
-    <form action="/encrypt" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Encrypt</button>
-    </form>
+<article class="vault-card">
+    <h3>Welcome Back</h3>
+    <a href="/vault" role="button">Open My Vault</a>
 </article>
-
-<article class="vault-box">
-    <h3>Decrypt a File</h3>
-    <form action="/decrypt" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit" class="secondary">Decrypt</button>
-    </form>
-</article>
-
-<a href="/vault">Open My Vault</a>
 
 {% endif %}
 
 {% endblock %}
+
