@@ -27,8 +27,8 @@ app.secret_key = "super-secret-key"
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"
-GOOGLE_CLIENT_SECRET = "YOUR_CLIENT_SECRET_HERE"
+GOOGLE_CLIENT_ID = YOUR_GOOGLEID
+GOOGLE_CLIENT_SECRET = YOUR_SECRETID
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
@@ -38,7 +38,7 @@ flow = Flow.from_client_secrets_file(
     redirect_uri="http://localhost:5000/callback"
 )
 
-VAULT_ROOT = "static/vault"
+VAULT_ROOT = "vault"
 
 # ---------------------------- HELPERS ---------------------------- #
 
@@ -62,7 +62,20 @@ def ensure_user_vault():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    message = request.args.get("msg", "")
+
+    if "email" not in session:
+        return render_template("index.html", files=[], message=message)
+
+    user_dir = ensure_user_vault()
+
+    encrypted_files = [
+        f for f in os.listdir(user_dir)
+        if f.endswith(".enc")
+    ]
+
+    return render_template("index.html", files=encrypted_files, message=message)
+
 
 # ---------------- GOOGLE LOGIN ---------------- #
 
@@ -95,37 +108,50 @@ def logout():
 
 # ---------------- ENCRYPT ---------------- #
 
+from flask import flash
+from werkzeug.utils import secure_filename
+
 @app.route("/encrypt", methods=["POST"])
 def encrypt_file():
     if "email" not in session:
         return redirect("/")
 
-    file = request.files["file"]
-    data = file.read()
-
     user_dir = ensure_user_vault()
 
-    # AES key must be generated separately
+    uploaded = request.files["file"]
+    filename = secure_filename(uploaded.filename)
+
+    # Save original file temporarily
+    file_path = os.path.join(user_dir, filename)
+    uploaded.save(file_path)
+
+    data = read_bytes(file_path)
+
+    # Create AES key & encrypt
     aes_key = generate_aes_key()
     nonce, ciphertext = aes_encrypt(aes_key, data)
 
-    # Load RSA public key
-    public_pem = read_bytes(os.path.join(user_dir, "public_key.pem"))
-    wrapped_key = rsa_wrap_aes_key(public_pem, aes_key)
+    # Wrap AES key with RSA public key
+    public_key_pem = read_bytes(os.path.join(user_dir, "public_key.pem"))
+    wrapped_key = rsa_wrap_aes_key(public_key_pem, aes_key)
 
-    meta = {
-        "filename": file.filename,
+    # Save encrypted file
+    enc_path = file_path + ".enc"
+    write_bytes(enc_path, ciphertext)
+
+    # Save metadata
+    metadata = {
+        "filename": filename,
         "nonce": nonce.hex(),
         "wrapped_key": wrapped_key.hex()
     }
 
-    encrypted_path = os.path.join(user_dir, file.filename + ".enc")
-    metadata_path = encrypted_path + ".json"
+    write_json(enc_path + ".json", metadata)
 
-    write_bytes(encrypted_path, ciphertext)
-    write_json(metadata_path, meta)
+    flash(f"Encrypted: {filename}")
 
-    return "File encrypted successfully!"
+    return redirect("/vault")
+
 
 # ---------------- DECRYPT ---------------- #
 
@@ -134,12 +160,14 @@ def decrypt_file():
     if "email" not in session:
         return redirect("/")
 
-    file = request.files["file"]
-    ciphertext = file.read()
-
     user_dir = ensure_user_vault()
 
-    metadata = read_json(os.path.join(user_dir, file.filename + ".json"))
+    enc_filename = request.form.get("file")
+    enc_path = os.path.join(user_dir, enc_filename)
+
+    ciphertext = read_bytes(enc_path)
+    metadata = read_json(enc_path + ".json")
+
     nonce = bytes.fromhex(metadata["nonce"])
     wrapped_key = bytes.fromhex(metadata["wrapped_key"])
 
@@ -151,10 +179,32 @@ def decrypt_file():
     output_path = os.path.join(user_dir, "DECRYPTED_" + metadata["filename"])
     write_bytes(output_path, plaintext)
 
-    return send_file(output_path, as_attachment=True)
+    flash(f"Decrypted: {metadata['filename']}")
+
+    return redirect("/vault")
+
+
+# ---------------- VAULT (FILE LISTING) ---------------- #
+
+@app.route("/vault")
+def vault():
+    if "email" not in session:
+        return redirect("/")
+
+    user_dir = ensure_user_vault()
+
+    # Gather all encrypted files
+    encrypted_files = [
+        f for f in os.listdir(user_dir)
+        if f.endswith(".enc")
+    ]
+
+    return render_template("vault.html", encrypted_files=encrypted_files)
+
 
 # ---------------------------- RUN ---------------------------- #
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
