@@ -1,12 +1,25 @@
+# E2EE-Web-Vault (End-to-End Encrypted Web Vault)
+
+## About
+This is a Flask web application demonstrating client-side end-to-end encryption for file storage. Files are encrypted with AES-256-GCM and AES keys are wrapped with RSA (RSA-OAEP). Google OAuth is used only for authentication (per-user vaults). Keys are stored in `keys/<email>/` and encrypted files in `vault/<email>/`.
+
+## Setup (Windows / macOS / Linux)
+1. Install Python 3.10+ and pip.
+2. Clone or copy this project folder.
+3. Create a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # macOS/Linux
+   venv\Scripts\activate      # Windows
+
 Instructions for Use
 
 Step 1: Open a terminal (PowerShell or CMD)
 pip install -r requirements.txt
 
-Step 2: Add your Google OAuth credentials
-
-Go to:
-https://console.cloud.google.com/apis/credentials
+Step 2: Google OAuth Setup
+Go to https://console.cloud.google.com/apis/credentials
+ and create OAuth 2.0 Client ID with Application Type Web application.
 
 Create:
 - OAuth client ID
