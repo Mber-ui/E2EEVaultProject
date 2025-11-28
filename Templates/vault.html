@@ -1,31 +1,80 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Your Vault</title>
-</head>
-<body>
-    <h1>Your Encrypted Files</h1>
+{% extends "layout.html" %}
+{% block content %}
 
-    <a href="/">Home</a> |
-    <a href="/logout">Logout</a>
+<h2>Your Secure Vault</h2>
 
-    <hr>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="banner">{{ messages[0] }}</div>
+  {% endif %}
+{% endwith %}
 
-    {% if files %}
-        <ul>
-        {% for f in files %}
-            <li>
-                {{ f }}
-                <form action="/decrypt" method="POST" enctype="multipart/form-data" style="display:inline;">
-                    <input type="hidden" name="file" value="{{ f }}">
-                    <button type="submit">Decrypt</button>
-                </form>
-            </li>
+<!-- Encrypted File List -->
+<article class="vault-card">
+    <h3><i class="bi bi-folder-lock"></i> Encrypted Files</h3>
+
+    {% if encrypted_files %}
+        {% for f in encrypted_files %}
+        <div class="file-row">
+            <div class="file-label">
+                <i class="bi bi-file-earmark-lock"></i>
+                <span>{{ f }}</span>
+            </div>
+            <form method="POST" action="/decrypt">
+                <input type="hidden" name="file" value="{{ f }}">
+                <button type="submit" class="secondary">Decrypt</button>
+            </form>
+        </div>
         {% endfor %}
-        </ul>
     {% else %}
         <p>No encrypted files yet.</p>
     {% endif %}
+</article>
 
-</body>
-</html>
+<!-- Upload Section -->
+<article class="vault-card">
+    <h3><i class="bi bi-upload"></i> Upload & Encrypt New File</h3>
+
+    <!-- Drag & Drop -->
+    <div id="drop-zone" class="drop-zone">
+        <i class="bi bi-cloud-arrow-up" style="font-size: 2.5rem;"></i>
+        <p>Drag & drop a file here or click to browse</p>
+    </div>
+
+    <!-- Hidden File Input -->
+    <form id="upload-form" action="/encrypt" method="post" enctype="multipart/form-data" style="display:none;">
+        <input type="file" id="file-input" name="file" required>
+        <button type="submit">Encrypt</button>
+    </form>
+</article>
+
+<script>
+    const zone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    const uploadForm = document.getElementById("upload-form");
+
+    zone.addEventListener("click", () => fileInput.click());
+
+    zone.addEventListener("dragover", e => {
+        e.preventDefault();
+        zone.classList.add("dragover");
+    });
+
+    zone.addEventListener("dragleave", () => {
+        zone.classList.remove("dragover");
+    });
+
+    zone.addEventListener("drop", e => {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            uploadForm.submit();
+        }
+    });
+
+    fileInput.addEventListener("change", () => uploadForm.submit());
+</script>
+
+{% endblock %}
